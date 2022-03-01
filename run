@@ -1,0 +1,41 @@
+#!/bin/bash
+# $runType ---> sigleModle, mutiModels, dataModel, cmip6Modle
+# -n | --modelNames, choose the model names
+# -a | --variable,   choose the variable
+# -y | --year,       year range
+# -m | --month,      month number
+# -t | --type,       out type
+
+# echo "test = $1"
+runType=$1
+echo "this is $runType"
+if [ ! -n "$runType" ]; then
+    echo "runType is NULL. You must choose a run type: sigleModle, mutiModels, dataModel, cmip6Model."
+elif []
+fi
+set -- `getopt -o n:a:y:m:t: --long modelNames:,variable:,year:,month:,type: \
+        -- "$@"`
+
+echo "param = $@"
+
+while [ -n "$1" ]
+do
+    case "$1" in 
+        # test) echo "found option a and param = $2" 
+        #     shift ;;
+        -n|--modelNames) echo "found option a and param = $2" 
+            shift ;;
+        -a|--variable) echo "found option b and param = $2"
+            shift ;;
+        -y|--year) echo "found option c and param = $2" 
+            shift;;
+        -m|--month) echo "found option d and param = $2" 
+            shift ;;
+        -t|--type) echo "found option e and param = $2"
+            shift ;;
+        --) ;;
+        *) echo "what's this?" 
+        break ;;
+    esac
+    shift
+done
