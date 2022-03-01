@@ -1,41 +1,149 @@
 #!/bin/bash
-# $runType ---> sigleModle, mutiModels, dataModel, cmip6Modle
+# $runType ---> singleModel, mutiModels, dataModel, cmip6Model
 # -n | --modelNames, choose the model names
 # -a | --variable,   choose the variable
 # -y | --year,       year range
 # -m | --month,      month number
 # -t | --type,       out type
 
-# echo "test = $1"
+# ---------------------- proc defination ---------------------- #
+show_version()
+{
+        echo "version: 1.0.0"
+        echo "updated date: 2022-03-01"
+}
+
+show_usage()
+{
+        echo -e "`printf %-16s "Usage: $0"` [runType: singleModel, mutiModels, dataModel, cmip6Model]"
+        echo -e "`printf %-16s ` [-h|--help]"
+        echo -e "`printf %-16s ` [-v|-V|--version]"
+        echo -e "`printf %-16s ` [-n|--modelNames ... ]"
+        echo -e "`printf %-16s ` [-a|--variable ... ]"
+        echo -e "`printf %-16s ` [-y|--year ... ]"
+        echo -e "`printf %-16s ` [-m|--month ... ]"
+        echo -e "`printf %-16s ` [-t|--type ... ]"
+        # echo -e "`printf %-16s ` [-n|--ignore]"
+        # echo "ignr_flag: 'ignr'-some ip will be ignored; otherwise-all ip will be handled"
+}
+
+show_example()
+{
+    echo -e "For example: $0 singleModel -n CESM -a GPP -y 1980,2000 -m 3 -t mean"
+}
+
+# -----------------------------------------------------------------------------
+ls_runType=(singleModel mutiModels dataModel cmip6Model)
+ls_models=("CESM" "CABLE")
+ls_variables=("GPP" "NPP")
+ls_rangeYear=(1850 2100)
+ls_month=(0 1 2 3 4 5 6 7 8 9 10 11 12) # 0 mean all year
+ls_outTypes=(all mean sd)
+# -----------------------------------------------------------------------------
+# get the first parameter: runType ...
 runType=$1
-echo "this is $runType"
-if [ ! -n "$runType" ]; then
-    echo "runType is NULL. You must choose a run type: sigleModle, mutiModels, dataModel, cmip6Model."
-elif []
-fi
-set -- `getopt -o n:a:y:m:t: --long modelNames:,variable:,year:,month:,type: \
+
+set -- `getopt -o hvVn:a:y:m:t: --long modelNames:,variable:,year:,month:,type: \
         -- "$@"`
 
-echo "param = $@"
+# echo "param = $@"
 
 while [ -n "$1" ]
 do
     case "$1" in 
-        # test) echo "found option a and param = $2" 
-        #     shift ;;
-        -n|--modelNames) echo "found option a and param = $2" 
+        -h|--help)
+            show_usage; exit 0
+            ;;
+        -v|-V|--version)
+            show_version; exit 0
+            ;;
+        -n|--modelNames) get_modelNames="$2"  # echo "found option a and param = $2" 
             shift ;;
-        -a|--variable) echo "found option b and param = $2"
+        -a|--variable)   get_variable=$2    # echo "found option b and param = $2"
             shift ;;
-        -y|--year) echo "found option c and param = $2" 
+        -y|--year)       get_year=$2        # echo "found option c and param = $2" 
             shift;;
-        -m|--month) echo "found option d and param = $2" 
+        -m|--month)      get_month=$2       # echo "found option d and param = $2" 
             shift ;;
-        -t|--type) echo "found option e and param = $2"
+        -t|--type)       get_outType=$2     # echo "found option e and param = $2"
             shift ;;
         --) ;;
-        *) echo "what's this?" 
+        ?) echo "what's this?" 
         break ;;
     esac
     shift
 done
+
+# check the input parameters
+# echo "run_type = $runType"
+if [ ! -n "$runType" ]; then
+    echo "runType is NULL. You must choose a run type: singleModle, mutiModels, dataModel, cmip6Model."
+    show_example; exit 0
+elif [[ ! "${ls_runType[@]}" =~ "$runType" ]];then
+    echo "runType is invalid. You must choose a run type: singleModle, mutiModels, dataModel, cmip6Model."
+    show_example; exit 0
+fi
+
+# echo "get_modelNames = $get_modelNames"
+tem_modelNames=`echo $get_modelNames | sed $'s/\'//g'`
+arr_modelNames=(${tem_modelNames//,/ }) # must have the space in the end
+for i_modelName in ${arr_modelNames[@]}
+do
+    # echo "i_modelName = $i_modelName"
+    if [[ ! "${ls_models[@]}" =~ "$i_modelName" ]]; then
+        echo "The model name: $i_modelName, is not in the list: ${ls_models[@]}"
+        exit 0 
+    fi
+done
+
+# echo "get_variable = $get_variable"
+tem_variable=`echo $get_variable | sed $'s/\'//g'`
+if [[ ! "${ls_variables[@]}" =~ "$tem_variable" ]]; then
+    echo "The variable name: $tem_variable, must be single and is not in the list: ${ls_variables[@]}"
+    exit 0 
+fi
+
+# echo "get_year = $get_year"
+tem_year=`echo $get_year | sed $'s/\'//g'`
+arr_year=(${tem_year//,/ })
+num=${#arr_year[@]}
+# echo "array number = $num"
+# echo "array year = ${arr_year[@]}"
+if [[ $num -ne 2 ]]; then
+    echo "the year must have two number: start and end year, as -y startYear,endYear"
+    exit 0
+else
+    startYear=${arr_year[0]}
+    endYear=${arr_year[1]}
+    # echo "startYear is $startYear"
+    if [ $startYear -gt $endYear ]; then
+        echo "the start year excesses the end year..."
+        exit 0
+    else
+        # echo "ls_rangeYear = ${ls_rangeYear[1]}"
+        if [ $startYear -lt ${ls_rangeYear[0]} ] || [ $startYear -gt ${ls_rangeYear[1]} ]; then
+            echo "the start year $startYear , is out of the range: 1850-2100..."
+            exit 0
+        fi
+        if [ $endYear -lt ${ls_rangeYear[0]} ] || [ $endYear -gt ${ls_rangeYear[1]} ]; then
+            echo "the end year $endYear, is out of the range: 1850-2100..."
+            exit 0
+        fi
+    fi
+fi
+
+# echo "get_month = $get_month"
+tem_month=`echo $get_month | sed $'s/\'//g'`
+# echo "tem_month = $tem_month"
+if [[ ! "${ls_month[@]}" =~ "$tem_month" ]]; then
+    echo "The month value: $tem_month, is not in the list: ${ls_month[@]}"
+    exit 0 
+fi
+
+# echo "get_outType = $get_outType"
+tem_outType=`echo $get_outType | sed $'s/\'//g'`
+# echo "tem_outType = $tem_outType"
+if [[ ! "${ls_outTypes[@]}" =~ "$tem_outType" ]]; then
+    echo "The out type value: $tem_outType, is not in the list: ${ls_outTypes[@]}"
+    exit 0 
+fi
