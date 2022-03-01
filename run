@@ -99,7 +99,7 @@ done
 # echo "get_variable = $get_variable"
 tem_variable=`echo $get_variable | sed $'s/\'//g'`
 if [[ ! "${ls_variables[@]}" =~ "$tem_variable" ]]; then
-    echo "The variable name: $tem_variable, must be single and is not in the list: ${ls_variables[@]}"
+    echo "The variable name: $tem_variable, must be single and in the list: ${ls_variables[@]}"
     exit 0 
 fi
 
@@ -147,3 +147,8 @@ if [[ ! "${ls_outTypes[@]}" =~ "$tem_outType" ]]; then
     echo "The out type value: $tem_outType, is not in the list: ${ls_outTypes[@]}"
     exit 0 
 fi
+
+# -----------------------------------------------------------------------------------
+# call python script and send the parameters to it
+py_name="CMETcore.py"
+python $py_name $runType $tem_modelNames $tem_variable $tem_year $tem_month $tem_outType
