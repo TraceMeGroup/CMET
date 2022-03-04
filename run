@@ -34,7 +34,7 @@ show_example()
 
 # -----------------------------------------------------------------------------
 ls_runType=(singleModel mutiModels dataModel cmip6Model)
-ls_models=("CESM" "CABLE")
+ls_models=("CESM2" "CABLE" "CNRM-ESM2-1" "IPSL-CM6A-LR")
 ls_variables=("GPP" "NPP")
 ls_rangeYear=(1850 2100)
 ls_month=(0 1 2 3 4 5 6 7 8 9 10 11 12) # 0 mean all year
@@ -75,6 +75,7 @@ do
 done
 
 # check the input parameters
+######## check the runType ################
 # echo "run_type = $runType"
 if [ ! -n "$runType" ]; then
     echo "runType is NULL. You must choose a run type: singleModle, mutiModels, dataModel, cmip6Model."
@@ -84,68 +85,103 @@ elif [[ ! "${ls_runType[@]}" =~ "$runType" ]];then
     show_example; exit 0
 fi
 
+######## check the model names ################
 # echo "get_modelNames = $get_modelNames"
 tem_modelNames=`echo $get_modelNames | sed $'s/\'//g'`
 arr_modelNames=(${tem_modelNames//,/ }) # must have the space in the end
-for i_modelName in ${arr_modelNames[@]}
-do
-    # echo "i_modelName = $i_modelName"
-    if [[ ! "${ls_models[@]}" =~ "$i_modelName" ]]; then
-        echo "The model name: $i_modelName, is not in the list: ${ls_models[@]}"
-        exit 0 
-    fi
-done
-
-# echo "get_variable = $get_variable"
-tem_variable=`echo $get_variable | sed $'s/\'//g'`
-if [[ ! "${ls_variables[@]}" =~ "$tem_variable" ]]; then
-    echo "The variable name: $tem_variable, must be single and in the list: ${ls_variables[@]}"
-    exit 0 
+if [ ! -n "$tem_modelNames" ]; then
+    echo "The model names is NULL. Please input the -n/--modelNames modelName."
+    show_example
+    exit 0
+else
+    for i_modelName in ${arr_modelNames[@]}
+    do
+        # echo "i_modelName = $i_modelName"
+        if [[ ! "${ls_models[@]}" =~ "$i_modelName" ]]; then
+            echo "The model name: $i_modelName, is not in the list: ${ls_models[@]}"
+            exit 0 
+        fi
+    done
 fi
 
+######## check the variable ################
+# echo "get_variable = $get_variable"
+tem_variable=`echo $get_variable | sed $'s/\'//g'`
+if [ ! -n "$tem_variable" ]; then
+    echo "The variable is NULL. Please input the -a/--variable variableName."
+    show_example
+    exit 0
+else
+    if [[ ! "${ls_variables[@]}" =~ "$tem_variable" ]]; then
+        echo "The variable name: $tem_variable, must be single and in the list: ${ls_variables[@]}"
+        exit 0 
+    fi
+fi
+
+######## check the range of year ################
 # echo "get_year = $get_year"
 tem_year=`echo $get_year | sed $'s/\'//g'`
 arr_year=(${tem_year//,/ })
 num=${#arr_year[@]}
 # echo "array number = $num"
 # echo "array year = ${arr_year[@]}"
-if [[ $num -ne 2 ]]; then
-    echo "the year must have two number: start and end year, as -y startYear,endYear"
+if [ ! -n "$tem_year" ]; then
+    echo "The range of year is NULL. Please input the -y/--year startYear,endYear."
+    show_example
     exit 0
 else
-    startYear=${arr_year[0]}
-    endYear=${arr_year[1]}
-    # echo "startYear is $startYear"
-    if [ $startYear -gt $endYear ]; then
-        echo "the start year excesses the end year..."
+    if [[ $num -ne 2 ]]; then
+        echo "the year must have two number: start and end year, as -y startYear,endYear"
         exit 0
     else
-        # echo "ls_rangeYear = ${ls_rangeYear[1]}"
-        if [ $startYear -lt ${ls_rangeYear[0]} ] || [ $startYear -gt ${ls_rangeYear[1]} ]; then
-            echo "the start year $startYear , is out of the range: 1850-2100..."
+        startYear=${arr_year[0]}
+        endYear=${arr_year[1]}
+        # echo "startYear is $startYear"
+        if [ $startYear -gt $endYear ]; then
+            echo "the start year excesses the end year..."
             exit 0
-        fi
-        if [ $endYear -lt ${ls_rangeYear[0]} ] || [ $endYear -gt ${ls_rangeYear[1]} ]; then
-            echo "the end year $endYear, is out of the range: 1850-2100..."
-            exit 0
+        else
+            # echo "ls_rangeYear = ${ls_rangeYear[1]}"
+            if [ $startYear -lt ${ls_rangeYear[0]} ] || [ $startYear -gt ${ls_rangeYear[1]} ]; then
+                echo "the start year $startYear , is out of the range: 1850-2100..."
+                exit 0
+            fi
+            if [ $endYear -lt ${ls_rangeYear[0]} ] || [ $endYear -gt ${ls_rangeYear[1]} ]; then
+                echo "the end year $endYear, is out of the range: 1850-2100..."
+                exit 0
+            fi
         fi
     fi
 fi
 
+######## check the month value ################
 # echo "get_month = $get_month"
 tem_month=`echo $get_month | sed $'s/\'//g'`
 # echo "tem_month = $tem_month"
-if [[ ! "${ls_month[@]}" =~ "$tem_month" ]]; then
-    echo "The month value: $tem_month, is not in the list: ${ls_month[@]}"
-    exit 0 
+if [ ! -n "$tem_month" ]; then
+    echo "The month value is NULL. Please input the -m/--month month."
+    show_example
+    exit 0
+else
+    if [[ ! "${ls_month[@]}" =~ "$tem_month" ]]; then
+        echo "The month value: $tem_month, is not in the list: ${ls_month[@]}"
+        exit 0 
+    fi
 fi
 
+######## check the run type ################
 # echo "get_outType = $get_outType"
 tem_outType=`echo $get_outType | sed $'s/\'//g'`
 # echo "tem_outType = $tem_outType"
-if [[ ! "${ls_outTypes[@]}" =~ "$tem_outType" ]]; then
-    echo "The out type value: $tem_outType, is not in the list: ${ls_outTypes[@]}"
-    exit 0 
+if [ ! -n "$tem_outType" ]; then
+    echo "The out type is NULL. Please input the -t/--type all/mean/sd."
+    show_example
+    exit 0
+else
+    if [[ ! "${ls_outTypes[@]}" =~ "$tem_outType" ]]; then
+        echo "The out type value: $tem_outType, is not in the list: ${ls_outTypes[@]}"
+        exit 0 
+    fi
 fi
 
 # -----------------------------------------------------------------------------------
