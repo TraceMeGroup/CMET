@@ -5,7 +5,8 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.basemap import Basemap, cm
 
 class test:
-    def __init__(self, ):
+    def __init__(self, **keywords):
+        pass
 
     def convertLon(data):
         nlat, nlon = 180, 360
@@ -39,3 +40,6 @@ class test:
         cb.ax.tick_params(labelsize=16) 
         cb.set_label(titleName+' ('+unit+")", fontsize=24, labelpad=10)
         plt.savefig(outFig) 
+    
+    def callTest(self):
+        print("test ...")

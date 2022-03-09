@@ -32,6 +32,25 @@ show_example()
     echo -e "For example: $0 singleModel -n CESM -a GPP -y 1980,2000 -m 3 -t mean"
 }
 
+function checkFiles(){
+    for file in 'ls $1'
+    do
+        if [ -d $1"/"$file ]; then
+            checkFiles $1"/"$file
+        else
+            local path=$1"/"$file
+            local name=$file
+            local size='du --max-depth=1 $path|awk '{print $1}''
+            echo $name $size $path
+        fi
+    done
+}
+
+# -----------------------------------------------------------------------------
+# check the model data
+IFS=$'\n'   # must be used for avoiding the space error
+INIT_PATH="/mnt/d/ubuntu/traceMeGroup/testData"
+checkFiles $INIT_PATH
 # -----------------------------------------------------------------------------
 ls_runType=(singleModel mutiModels dataModel cmip6Model)
 ls_models=("CESM2" "CABLE" "CNRM-ESM2-1" "IPSL-CM6A-LR")
